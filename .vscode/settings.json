@@ -1,0 +1,12 @@
+{
+    "git.ignoreLimitWarning": true,
+    "files.exclude": {
+        "**/lib/services/flutter/**": true
+    },
+    "search.exclude": {
+        "**/lib/services/flutter/**": true
+    },
+    "dart.analysisExcludedFolders": [
+        "mobile/lib/services/flutter"
+    ]
+}

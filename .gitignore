@@ -1,0 +1,22 @@
+# .gitignore
+# Python
+__pycache__/
+*.pyc
+.env
+# Flutter
+build/
+*.lock
+.idea/
+.DS_Store
+backend/app/firebase-credentials.json
+backend/.env
+mobile/.dart_tool/
+mobile/build/
+mobile/ios/
+mobile/android/
+mobile/pubspec.lock
+mobile/.vscode/
+mobile/.idea/
+*.iml
+*.log
+*.tmp

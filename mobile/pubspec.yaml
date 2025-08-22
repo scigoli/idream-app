@@ -1,0 +1,10 @@
+# pubspec.yaml
+name: idream_app
+description: A dream assistant mobile app
+version: 1.0.0
+environment:
+  sdk: '>=2.17.0 <3.0.0'
+dependencies:
+  flutter:
+    sdk: flutter
+  http: any
