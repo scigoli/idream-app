@@ -17,20 +17,74 @@
 <body>
 <div class="container dream-box">
     <h2 class="mb-4 text-center">Idream - Interprete sogni</h2>
-    <div id="login-section">
-        <button id="login-btn" class="btn btn-primary w-100">Accedi con Google</button>
-        <div id="login-error" class="text-danger mt-2" style="display:none;"></div>
-    </div>
-    <div id="dream-section" style="display:none;">
-        <label for="dream-input" class="form-label">Scrivi il tuo sogno:</label>
-        <textarea id="dream-input" class="form-control" rows="4" placeholder="Descrivi il sogno..."></textarea>
-        <button id="dream-submit" class="btn btn-success mt-3 w-100">Ottieni domande</button>
-        <div id="dream-error" class="text-danger mt-2" style="display:none;"></div>
-    </div>
+        <div id="login-section" class="container mt-5">
+            <h2>Accedi per interpretare il tuo sogno</h2>
+            <button id="login-btn" class="btn btn-primary">Accedi con Google</button>
+            <div id="user-info" class="mt-3" style="display:none">
+                <span id="user-name" class="fw-bold"></span><br>
+                <span id="user-email" class="text-muted"></span><br>
+                <button id="logout-btn" class="btn btn-outline-secondary btn-sm mt-2" style="display:none;">Logout</button>
+            </div>
+        </div>
+        <div id="wizard-section" class="container mt-5" style="display:none;">
+            <h2>Benvenuto!</h2>
+            <div id="user-info" class="mb-3"></div>
+            <button id="logout-btn" class="btn btn-outline-danger mb-3" style="display:none;">Logout</button>
+            <div id="step-1" style="display:block;">
+                <label for="sogno-input" class="form-label">Descrivi il tuo sogno</label>
+                <textarea id="sogno-input" class="form-control" rows="3"></textarea>
+                <button id="next-btn" class="btn btn-success mt-3">Avanti</button>
+            </div>
+            <div id="step-2" style="display:none;">
+                <h4>Domande</h4>
+                <form id="questions-form"></form>
+                <button id="submit-btn" class="btn btn-success mt-3">Ottieni interpretazione</button>
+            </div>
+            <div id="step-3" style="display:none;">
+                <h4>Interpretazione</h4>
+                <div id="interpretation-result" class="alert alert-info"></div>
+            </div>
+        </div>
     <div id="question-section" class="question-box" style="display:none;"></div>
     <div id="result-section" class="result-box" style="display:none;"></div>
 </div>
 <script>
+// Collega il pulsante "Ottieni interpretazione" al flusso corretto
+document.getElementById('submit-btn').onclick = async function() {
+    // Raccogli le risposte dal form
+    const form = document.getElementById('questions-form');
+    const inputs = form.querySelectorAll('input');
+    answers = [];
+    let valid = true;
+    inputs.forEach((input, i) => {
+        const val = sanitize(input.value);
+        if (!val.trim()) valid = false;
+        answers.push([questions[i], val]);
+    });
+    if (!valid) {
+        alert('Rispondi a tutte le domande.');
+        return;
+    }
+    document.getElementById('step-2').style.display = 'none';
+    document.getElementById('step-3').style.display = 'block';
+    // Chiamata interpretazione
+    try {
+        const res = await fetch('/proxy/interpretation', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + idToken
+            },
+            body: JSON.stringify({ sogno: dreamText, risposte: answers })
+        });
+        if (!res.ok) throw new Error('Errore API: ' + res.status);
+        const result = await res.json();
+        document.getElementById('interpretation-result').innerHTML = sanitize(result.interpretazione || JSON.stringify(result));
+    } catch (err) {
+        document.getElementById('interpretation-result').innerHTML = `<span class="text-danger">${sanitize(err.message)}</span>`;
+        console.error('API /interpretation error', err);
+    }
+};
 // Configurazione Firebase
 
 // --- LOGGING DEBUG ---
@@ -64,6 +118,38 @@ function sanitize(str) {
 
 // Login Google
 const loginBtn = document.getElementById('login-btn');
+const logoutBtn = document.getElementById('logout-btn');
+const userInfoDiv = document.getElementById('user-info');
+const userNameSpan = document.getElementById('user-name');
+const userEmailSpan = document.getElementById('user-email');
+
+function showUserInfo(user) {
+    userInfoDiv.style.display = 'block';
+    userNameSpan.textContent = user.displayName || user.email;
+    userEmailSpan.textContent = user.email;
+    logoutBtn.style.display = 'inline-block';
+}
+function hideUserInfo() {
+    userInfoDiv.style.display = 'none';
+    userNameSpan.textContent = '';
+    userEmailSpan.textContent = '';
+    logoutBtn.style.display = 'none';
+}
+
+firebase.auth().onAuthStateChanged(function(user) {
+    if (user) {
+        // Utente loggato
+        loginBtn.style.display = 'none';
+        showUserInfo(user);
+        document.getElementById('wizard-section').style.display = 'block';
+    } else {
+        // Utente non loggato
+        loginBtn.style.display = 'inline-block';
+        hideUserInfo();
+        document.getElementById('wizard-section').style.display = 'none';
+    }
+});
+
 if (!loginBtn) {
     console.error('[LOG] Pulsante login Google non trovato!');
 } else {
@@ -73,36 +159,34 @@ if (!loginBtn) {
         const provider = new firebase.auth.GoogleAuthProvider();
         auth.signInWithPopup(provider)
             .then(async (result) => {
-                console.log('[LOG] Login success:', result);
                 if (!result.user) {
                     console.error('[LOG] Nessun utente restituito da Firebase!');
-                    document.getElementById('login-error').innerText = 'Errore: nessun utente restituito da Firebase.';
-                    document.getElementById('login-error').style.display = 'block';
                     return;
                 }
                 idToken = await result.user.getIdToken();
-                console.log('[LOG] ID Token:', idToken);
-                document.getElementById('login-section').style.display = 'none';
-                document.getElementById('dream-section').style.display = 'block';
+                document.getElementById('step-1').style.display = 'block';
+                document.getElementById('step-2').style.display = 'none';
+                document.getElementById('step-3').style.display = 'none';
             })
             .catch((error) => {
                 console.error('[LOG] Login error:', error);
-                document.getElementById('login-error').innerText = 'Errore login: ' + error.message;
-                document.getElementById('login-error').style.display = 'block';
             });
     };
 }
 
+logoutBtn.onclick = function() {
+    firebase.auth().signOut();
+};
+
 // Invio sogno
 const dreamSubmit = document.getElementById('dream-submit');
-dreamSubmit.onclick = async function() {
-    dreamText = sanitize(document.getElementById('dream-input').value);
+const nextBtn = document.getElementById('next-btn');
+nextBtn.onclick = async function() {
+    dreamText = sanitize(document.getElementById('sogno-input').value);
     if (!dreamText.trim()) {
-        document.getElementById('dream-error').innerText = 'Inserisci una descrizione del sogno.';
-        document.getElementById('dream-error').style.display = 'block';
+        alert('Inserisci una descrizione del sogno.');
         return;
     }
-    document.getElementById('dream-error').style.display = 'none';
     try {
         const res = await fetch('/proxy/questions', {
             method: 'POST',
@@ -117,14 +201,22 @@ dreamSubmit.onclick = async function() {
         questions = data.domande || [];
         answers = [];
         currentQuestion = 0;
-        showQuestion();
-        document.getElementById('dream-section').style.display = 'none';
+        document.getElementById('step-1').style.display = 'none';
+        document.getElementById('step-2').style.display = 'block';
+        showQuestionsForm();
     } catch (err) {
-        document.getElementById('dream-error').innerText = err.message;
-        document.getElementById('dream-error').style.display = 'block';
+        alert(err.message);
         console.error('API /questions error', err);
     }
 };
+
+function showQuestionsForm() {
+    const form = document.getElementById('questions-form');
+    form.innerHTML = '';
+    questions.forEach((q, i) => {
+        form.innerHTML += `<div class="mb-2"><label>Domanda ${i+1}: ${sanitize(q)}</label><input type="text" class="form-control" name="answer${i}" /></div>`;
+    });
+}
 
 // Wizard domande
 function showQuestion() {

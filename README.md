@@ -1,7 +1,3 @@
-## Applicazione Flutter
-
-La versione mobile Flutter è attualmente in lavorazione. Segui gli aggiornamenti nella cartella `mobile/`.
-
 # idream-app
 
 This project contains both a FastAPI backend and a Flutter mobile application.
@@ -9,6 +5,10 @@ This project contains both a FastAPI backend and a Flutter mobile application.
 ## Structure
 - `backend/`: FastAPI backend with OpenAI integration
 - `mobile/`: Flutter mobile app
+
+## Applicazione Flutter
+
+La versione mobile Flutter è attualmente in lavorazione. Segui gli aggiornamenti nella cartella `mobile/`.
 
 ## Avvio dell'applicazione HTML
 
