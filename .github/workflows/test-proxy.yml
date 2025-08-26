@@ -1,0 +1,41 @@
+# Esempio workflow GitHub Actions per test proxy
+
+name: Test Proxy Backend
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test-proxy:
+    runs-on: ubuntu-latest
+    env:
+      FIREBASE_API_KEY: ${{ secrets.FIREBASE_API_KEY }}
+      FIREBASE_AUTH_DOMAIN: ${{ secrets.FIREBASE_AUTH_DOMAIN }}
+      FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+      BACKEND_API_URL: ${{ secrets.BACKEND_API_URL }}
+      JWT_TOKEN: ${{ secrets.JWT_TOKEN }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: |
+          pip install -r backend/requirements.txt
+      - name: Avvia backend (in background)
+        run: |
+          nohup python -m uvicorn backend.app.main:app --reload &
+          sleep 10
+      - name: Esegui test proxy
+        run: |
+          python backend/app/proxy_test.py
+      - name: Salva log come artefatto
+        uses: actions/upload-artifact@v3
+        with:
+          name: proxy-log
+          path: backend/app/proxy.log
