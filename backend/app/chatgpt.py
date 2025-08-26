@@ -21,24 +21,33 @@ def get_questions(sogno):
         model="gpt-3.5-turbo",
         messages=[{"role": "user", "content": prompt}]
     )
+    print(f"sogno {response.choices[0].message.content}")
     # Estrai il testo e suddividi in domande
     return response.choices[0].message.content.split("\n")[:5]
 
 def get_interpretation(sogno, risposte):
-    prompt = (
-        f"L'utente ha descritto questo sogno: \"{sogno}\".\n"
-        "Ha risposto alle seguenti domande:\n"
-    )
-    for domanda, risposta in risposte:
-        prompt += f"- {domanda}\n  Risposta: {risposta}\n"
-    prompt += (
-        "Fornisci una interpretazione dettagliata del sogno basandoti sulla descrizione e sulle risposte."
-    )
-    response = client.chat.completions.create(
-        model="gpt-3.5-turbo",
-        messages=[{"role": "user", "content": prompt}]
-    )
-    return response.choices[0].message.content
+    print(f"DEBUG get_interpretation: sogno={sogno}, risposte={risposte}")
+    try:
+        prompt = (
+            f"L'utente ha descritto questo sogno: \"{sogno}\".\n"
+            "Ha risposto alle seguenti domande:\n"
+        )
+        for domanda, risposta in risposte:
+            print(f"DEBUG domanda={domanda}, risposta={risposta}")
+            prompt += f"- {domanda}\n  Risposta: {risposta}\n"
+        prompt += (
+            "Fornisci una interpretazione dettagliata del sogno basandoti sulla descrizione e sulle risposte."
+        )
+        print(f"DEBUG prompt: {prompt}")
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[{"role": "user", "content": prompt}]
+        )
+        print(f"DEBUG response: {response}")
+        return response.choices[0].message.content
+    except Exception as e:
+        print(f"ERRORE get_interpretation: {e}")
+        raise
 
 # Rimuovi il test automatico: lascia solo le funzioni
 # Se vuoi testare, usa un file

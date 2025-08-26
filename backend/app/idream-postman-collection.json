@@ -1,0 +1,129 @@
+{
+  "info": {
+    "name": "iDream - Firebase signIn + Backend",
+    "description": "Sign in to Firebase (email/password) and call local backend /questions with the idToken set as Bearer.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "1.0.0"
+  },
+  "item": [
+    {
+      "name": "1 - Firebase signIn (email/password)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{user_email}}\",\n  \"password\": \"{{user_password}}\",\n  \"returnSecureToken\": true\n}"
+        },
+        "url": {
+          "raw": "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={{firebase_api_key}}",
+          "protocol": "https",
+          "host": [
+            "identitytoolkit",
+            "googleapis",
+            "com"
+          ],
+          "path": [
+            "v1",
+            "accounts:signInWithPassword"
+          ],
+          "query": [
+            {
+              "key": "key",
+              "value": "{{firebase_api_key}}"
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "try {",
+              "  var body = pm.response.json();",
+              "  if (body.idToken) {",
+              "    pm.collectionVariables.set('id_token', body.idToken);",
+              "    pm.test('Saved idToken to collection variable', function(){ pm.expect(body.idToken).to.exist; });",
+              "  } else {",
+              "    pm.test('idToken missing in response', function(){ pm.expect(body.idToken).to.exist; });",
+              "  }",
+              "} catch(e) {",
+              "  pm.test('Response parse error', function(){ throw e; });",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "2 - Call backend /questions",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{id_token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{backend_base_url}}/questions?sogno={{sogno}}",
+          "host": [
+            "{{backend_base_url}}"
+          ],
+          "path": [
+            "questions"
+          ],
+          "query": [
+            {
+              "key": "sogno",
+              "value": "{{sogno}}"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "firebase_api_key",
+      "value": "YOUR_FIREBASE_API_KEY",
+      "type": "string"
+    },
+    {
+      "key": "user_email",
+      "value": "user@example.com",
+      "type": "string"
+    },
+    {
+      "key": "user_password",
+      "value": "user_password",
+      "type": "string"
+    },
+    {
+      "key": "id_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "backend_base_url",
+      "value": "http://127.0.0.1:8000",
+      "type": "string"
+    },
+    {
+      "key": "sogno",
+      "value": "prova",
+      "type": "string"
+    }
+  ]
+}
